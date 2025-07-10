@@ -3,7 +3,7 @@ import librosa
 import pretty_midi
 import numpy as np 
 SAMPLE_RATE = 44100
-HOP_LENGTH = 512
+HOP_LENGTH = 64
 
 def wav_to_spec(audio_dir): 
     spec_path = '/home/clem3nti/projects/scribe/data/spectrograms'
@@ -11,8 +11,8 @@ def wav_to_spec(audio_dir):
         os.makedirs(spec_path) 
 
     #sample parameters 
-    n_bins = 768 #total freq bins
-    bins_per_octave = 64 #num bins in each oct
+    n_bins = 96 #total freq bins
+    bins_per_octave = 12 #num bins in each oct
     
     i = 0 
     for f in os.listdir(audio_dir): 

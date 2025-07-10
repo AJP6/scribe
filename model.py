@@ -11,17 +11,17 @@ class AudioToMidi(nn.Module):
             nn.Conv2d(in_channels=1, out_channels=32, kernel_size=(3,3), padding=1), 
             nn.BatchNorm2d(num_features=32), 
             nn.ReLU(), 
-            nn.MaxPool2d(kernel_size=(2,1)),
+            nn.MaxPool2d(kernel_size=(1,2)),
 
             nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(3,3), padding=1), 
             nn.BatchNorm2d(num_features=64), 
             nn.ReLU(), 
-            nn.MaxPool2d(kernel_size=(2,1)), 
+            nn.MaxPool2d(kernel_size=(1,2)), 
 
             nn.Conv2d(in_channels=64, out_channels=128, kernel_size=(3,3), padding=1), 
             nn.BatchNorm2d(num_features=128), 
             nn.ReLU(), 
-            nn.MaxPool2d(kernel_size=(2,1)),
+            nn.MaxPool2d(kernel_size=(1,2))
         )
 
         #output layers 
@@ -40,5 +40,5 @@ class AudioToMidi(nn.Module):
 
         x = self.lin(x)
         x = x.permute(0, 2, 1)
-        #returned tensor is of shape [time, freq]
+        #returned tensor is of shape [freq, time]
         return torch.sigmoid(x)
