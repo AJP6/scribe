@@ -26,6 +26,7 @@ def wav_to_spec(audio_dir):
                         bins_per_octave=bins_per_coctave)
 
         C_db = librosa.amplitude_to_db(np.abs(C), ref=np.max)
+        C_db = C_db + 80 #add 80 element wise to numpy array
 
         np.save(os.path.join(spec_path, sample_name), C_db)
         i+=1

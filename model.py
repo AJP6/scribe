@@ -3,5 +3,41 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class AudioToMidi(nn.Module): 
-    def __init__(): 
+    def __init__(self, input_freq_bins): 
         super().__init__()
+
+        #convolution layers
+        self.conv_block = nn.Sequential(
+            nn.Conv2d(in_channels=1, out_channels=32, kernel_size=(3,3), padding=1), 
+            nn.BatchNorm2d(num_features=32), 
+            nn.ReLU(), 
+            nn.MaxPool2d(kernel_size=(2,1)),
+
+            nn.Conv2d(in_channels=32, out_channels=64, kernel_size=(3,3), padding=1), 
+            nn.BatchNorm2d(num_features=64), 
+            nn.ReLU(), 
+            nn.MaxPool2d(kernel_size=(2,1)), 
+
+            nn.Conv2d(in_channels=64, out_channels=128, kernel_size=(3,3), padding=1), 
+            nn.BatchNorm2d(num_features=128), 
+            nn.ReLU(), 
+            nn.MaxPool2d(kernel_size=(2,1)),
+        )
+
+        #output layers 
+        #in features in out_channels * freq_bins
+        final_features = 128*input_freq_bins // (2**3)
+        self.lin = nn.Linear(in_features=final_features, out_features=96)
+
+
+    def forward(self, x):
+        #[batch, channels, bins, time]
+        x = self.conv_block(x)  
+        #[batch, bins, time, channels]
+        x = x.permute(0, 3, 2, 1)
+        Ba, Bi, T, C = x.shape
+        x = x.reshape(Ba, T, Bi*C)
+
+        x = self.lin(x)
+        #returned tensor is of shape [time, freq]
+        return torch.sigmoid(x)

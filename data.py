@@ -27,6 +27,8 @@ class SpectralData(Dataset, spec_dir, proll_dir):
 
         #unsqueeze to add a dim for channels for the 
         #(bins, time_steps) --> (channels, bins, time_steps)
+        #inner most dim is last
+        #outer most dim is first
         t_spec = torch.tensor(spec).unsqueeze(0) 
         t_piano_roll = torch.tensor(piano_roll)
 
