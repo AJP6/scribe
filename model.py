@@ -39,5 +39,6 @@ class AudioToMidi(nn.Module):
         x = x.reshape(Ba, T, Bi*C)
 
         x = self.lin(x)
+        x = x.permute(0, 2, 1)
         #returned tensor is of shape [time, freq]
         return torch.sigmoid(x)

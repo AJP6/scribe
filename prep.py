@@ -23,7 +23,8 @@ def wav_to_spec(audio_dir):
         C = librosa.cqt(y, sr=sr, 
                         hop_lenght=hop_length, 
                         n_bins=n_bins, 
-                        bins_per_octave=bins_per_coctave)
+                        bins_per_octave=bins_per_coctave
+        )
 
         C_db = librosa.amplitude_to_db(np.abs(C), ref=np.max)
         C_db = C_db + 80 #add 80 element wise to numpy array
@@ -41,14 +42,15 @@ def midi_to_roll(midi_dir):
         midi = pretty_midi.PrettyMIDI(os.path.join(midi_dir, f))
         midi = midi.get_piano_roll(fs=512)
         midi = (midi > 0).astype(int)
+        #format [freq, time]
         
         roll_name = 'proll' + str(i) + '.npy'
         np.save(os.path.join(note_path, roll_name), midi)
         i+=1
      
 def main(): 
-    audio_dir = '/home/clem3nti/porjects/scribe/data/audio'
-    midi_dir = '/home/clem3nti/porjects/scribe/data/midi'
+    audio_dir = '/home/clem3nti/projects/scribe/data/audio'
+    midi_dir = '/home/clem3nti/projects/scribe/data/midi'
     audio_to_spec(audio_dir)
     midi_to_roll(midi_dir)
 
