@@ -11,7 +11,7 @@ ROLL_DIR_TEST = '/home/clem3nti/projects/scribe/data/piano_rolls_test'
 
 EPOCHS = 60
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu' 
-FREQ_BINS = 768
+FREQ_BINS = 96
 
 train_loader = SpectralData(SPEC_DIR_TRAIN, ROLL_DIR_TRAIN)
 train_loader = SpectralData(SPEC_DIR_TEST, ROLL_DIR_TEST)

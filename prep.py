@@ -2,6 +2,7 @@ import os
 import librosa
 import pretty_midi
 import numpy as np 
+
 SAMPLE_RATE = 44100
 HOP_LENGTH = 64
 
@@ -58,5 +59,4 @@ def main():
     midi_to_roll(midi_dir)
 
 if __name__ == "__main__": 
-    main()
-
+    main()  
