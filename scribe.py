@@ -3,7 +3,8 @@ import os
 import pretty_midi
 import librosa
 import torch
-from model.py import * 
+from model import * 
+import numpy as np
 
 FREQ_BINS = 96
 SAMPLE_RATE = 44100
@@ -17,7 +18,7 @@ def parse_args():
     return args.wav_path
 
 def init_model(): 
-    model = AudioToMidi
+    model = AudioToMidi(input_freq_bins=FREQ_BINS)
     state_dict = torch.load('model_states/model1.pth')
     model.load_state_dict(state_dict)
     return model
@@ -43,21 +44,55 @@ def load_wav(file_name):
     return C_db
 
 #takes in a torch.Tensor()
-def convert_midi(piano_roll): 
-    numpy_roll = piano_roll.cpu().numpy() 
-    midi = pretty_midi.PrettyMIDI()
-    instrument = pretty_midi.Instrument(program=program)
-    fs = 120
+def convert_midi(piano_roll, output_file, threshold = 0.5, base_midi_pitch = 12, fs = SAMPLE_RATE // HOP_LENGTH): 
+    if isinstance(piano_roll, torch.Tensor):
+        numpy_roll = piano_roll.detach().cpu().numpy() 
+
+    midi_file = pretty_midi.PrettyMIDI()
+    instrument = pretty_midi.Instrument(program=0)
+
+    for pitch_idx in range(numpy_roll.shape[0]):
+        pitch = base_midi_pitch + pitch_idx
+        is_active = numpy_roll[pitch] > threshold
+
+        if not np.any(is_active):
+            continue
+
+        changes = np.diff(is_active.astype(int))
+        notes_on = np.where(changes == 1)[0]
+        notes_off = np.where(changes == -1)[1]
+
+        if is_active[0]:
+            notes_on = np.insert(notes_on, 0, 0)
+        if is_active[-1]:
+            notes_off = np.append(notes_off, len(is_active) - 1)
+
+        for on, off in zip(notes_on, notes_off):
+            start = on / fs
+            end = off / fs
+            note = pretty_midi.Note(velocity = 100, pitch = pitch, start = start, end = end)
+            instrument.notes.append(note)
+
+    midi_file.instruments.append(instrument)
+    midi_file.write(output_file)
+
 
 def main(): 
     #init model 
     model = init_model()
+    model.eval()
     #load file 
-    spec_array = load_wav(parse_args)
+    spec_array = load_wav(parse_args())
     #transcribe
-    piano_roll = model(spec_array)
+
+    with torch.no_grad():
+        piano_roll = model(torch.tensor(spec_array).unsqueeze(0).unsqueeze(0).float())
+
     #convert to midi
-    midi = convert_midi(piano_roll).squeeze(0)
+    wav_path = parse_args()
+    base = os.path.splitext(os.path.basename(wav_path))[0]
+    output_file = base + ".midi"
+    convert_midi(piano_roll.squeeze(0), output_file=output_file)
 
 if __name__ == "__main__": 
     main()
