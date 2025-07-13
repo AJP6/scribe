@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 class AudioToMidi(nn.Module): 
-    def __init__(self, input_freq_bins): 
+    def __init__(self, input_freq_bins=96): 
         super().__init__()
 
         #convolution layers
@@ -26,19 +26,20 @@ class AudioToMidi(nn.Module):
 
         #output layers 
         #in features in out_channels * freq_bins
-        final_features = 128*input_freq_bins // (2**3)
+        final_features = 128*input_freq_bins
         self.lin = nn.Linear(in_features=final_features, out_features=96)
 
 
     def forward(self, x):
         #[batch, channels, bins, time]
         x = self.conv_block(x)  
-        #[batch, bins, time, channels]
+        #[batch, time, bins, channels]
         x = x.permute(0, 3, 2, 1)
-        Ba, Bi, T, C = x.shape
+        Ba, T, Bi, C = x.shape
         x = x.reshape(Ba, T, Bi*C)
 
         x = self.lin(x)
         x = x.permute(0, 2, 1)
         #returned tensor is of shape [freq, time]
         return torch.sigmoid(x)
+        
