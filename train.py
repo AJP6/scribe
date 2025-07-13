@@ -13,19 +13,20 @@ EPOCHS = 60
 DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu' 
 FREQ_BINS = 96
 
-train_loader = SpectralData(SPEC_DIR_TRAIN, ROLL_DIR_TRAIN)
-train_loader = SpectralData(SPEC_DIR_TEST, ROLL_DIR_TEST)
+train_loader = DataLoader(SpectralData(SPEC_DIR_TRAIN, ROLL_DIR_TRAIN), batch_size=10, shuffle=True)
+test_loader = DataLoader(SpectralData(SPEC_DIR_TEST, ROLL_DIR_TEST), batch_size=10, shuffle=False)
 model = AudioToMidi(FREQ_BINS)
+model.to(DEVICE)
 
 loss_fn = nn.BCELoss()
-optimizer = nn.optim.Adam(model.parameters(), lr=1e-3)
+optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 
 for e in range(EPOCHS): 
     for spec_batch, roll_batch in train_loader: 
         spec = spec_batch.to(device)
         roll = roll_batch.to(device)
 
-        preds = model(spec_batch)
+        preds = model(spec)
         bin_preds = (preds > 0.5).float()
         loss = loss_fn(bin_preds, roll_batch)
 
@@ -33,7 +34,7 @@ for e in range(EPOCHS):
         loss.backward()
         optimizer.step()
         
-    print(f'Epoch {e}')
+    print(f"Epoch {e} : Loss = {loss.item():.4f}")
 
 model.eval()
 all_preds = []
