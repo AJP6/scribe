@@ -41,5 +41,8 @@ class AudioToMidi(nn.Module):
         x = self.lin(x)
         x = x.permute(0, 2, 1)
         #returned tensor is of shape [freq, time]
+
+        x = F.interpolate(x, size = 2048, mode = 'linear', align_corners = False)
+
         return torch.sigmoid(x)
         
