@@ -3,15 +3,16 @@ from model import *
 from torch.utils.data import DataLoader
 import torch 
 from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+import os
 
 SPEC_DIR_TRAIN = '/home/clem3nti/projects/scribe/data/spectrograms_train'
 ROLL_DIR_TRAIN = '/home/clem3nti/projects/scribe/data/piano_rolls_train'
 SPEC_DIR_TEST = '/home/clem3nti/projects/scribe/data/spectrograms_test'
 ROLL_DIR_TEST = '/home/clem3nti/projects/scribe/data/piano_rolls_test'
+SAVE_PATH = '/home/clem3nti/projects/scribe/model_states'
 
 EPOCHS = 60
-#DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu' 
-DEVICE = 'cpu'
+DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu' 
 FREQ_BINS = 96
 print("constants initialized")
 
@@ -24,18 +25,18 @@ model.to(DEVICE)
 print("model loaded")
 
 loss_fn = nn.BCELoss()
-print("optimizer function loaded")
+print("loss function loaded")
 
 optimizer = torch.optim.Adam(model.parameters(), lr=1e-3)
 print("optimizer loaded")
 
 print("beginning training loop")
 for e in range(EPOCHS): 
+    model.train()
     i=0
     for spec_batch, roll_batch in train_loader: 
         spec = spec_batch.to(DEVICE)
         roll = roll_batch.to(DEVICE)
-        print(f"batch {i} loaded")
 
         preds = model(spec)
         loss = loss_fn(preds, roll)
@@ -64,7 +65,7 @@ with torch.no_grad():
         preds = model(spec)
         bin_preds = (preds > 0.5).float()
 
-        y_pred = preds.view(-1).cpu().numpy()
+        y_pred = bin_preds.view(-1).cpu().numpy()
         y_true = roll.view(-1).cpu().numpy()
         
         cur_scores = dict() 
@@ -75,10 +76,16 @@ with torch.no_grad():
         all_scores.append(cur_scores)
 
 i = 0
-for score in all_scores: 
-    print(f"Score: {i}, Metrics: {all_scores[i]}")
-    i+=1
+with open('scores.txt', 'w') as f: 
+    for score in all_scores: 
+        f.write(f"Score: {i}, Metrics: {all_scores[i]}\n")
+        i+=1
     
-torch.save(model.state_dict(), "model_states/model1.pth")
+
+if not os.path.exists(SAVE_PATH): 
+    os.makedirs(SAVE_PATH) 
+    
+torch.save(model.state_dict(), os.path.join(SAVE_PATH, "model1.pth"))
+
 print("model saved")
 
