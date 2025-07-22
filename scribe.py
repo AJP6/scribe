@@ -10,6 +10,9 @@ FREQ_BINS = 96
 SAMPLE_RATE = 44100
 HOP_LENGTH = 64
 
+USE_DEFAULT_INPUT_DIR = True  # we can set to false if we want user to enter full paths
+DEFAULT_INPUT_DIR = '/home/clem3nti/projects/scribe/io/input'
+
 def parse_args():
     parser = argparse.ArgumentParser(description="WAV to MIDI converter")
     parser.add_argument("wav_path", type=str, help="Path to the input WAV file")
@@ -24,22 +27,24 @@ def init_model():
     return model
 
 def load_wav(file_name): 
-    load_path = '/home/clem3nti/projects/scribe/io/input'
+    if USE_DEFAULT_INPUT_DIR:
+        file_path = os.path.join(DEFAULT_INPUT_DIR, file_name)
+    else:
+        file_path = file_name
 
-    n_bins = 96 #total freq bins
-    bins_per_octave = 12 #num bins in each oct
+    if not os.path.isfile(file_path):
+        raise FileNotFoundError(f"wav file not found: {file_path}")
 
-    file_path = os.path.join(load_path, file_name)
-    #y is numpy array containing wav file
+    # y is numpy array containing wav file
     y, sr = librosa.load(file_path, sr=SAMPLE_RATE)
 
     C = librosa.cqt(y, sr=SAMPLE_RATE, 
                     hop_length=HOP_LENGTH, 
-                    n_bins=n_bins, 
-                    bins_per_octave=bins_per_octave)
+                    n_bins=FREQ_BINS, 
+                    bins_per_octave=12)
 
     C_db = librosa.amplitude_to_db(np.abs(C), ref=np.max)
-    C_db = C_db + 80 #add 80 element wise to numpy array
+    C_db = C_db + 80 # add 80 element wise to numpy array
 
     return C_db
 
@@ -53,14 +58,14 @@ def convert_midi(piano_roll, output_file, threshold = 0.5, base_midi_pitch = 12,
 
     for pitch_idx in range(numpy_roll.shape[0]):
         pitch = base_midi_pitch + pitch_idx
-        is_active = numpy_roll[pitch] > threshold
+        is_active = numpy_roll[pitch_idx] > threshold # changed this from numpy_roll[pitch] to [pitch_idx] cause otherwise i think it woudld go out of bounds
 
         if not np.any(is_active):
             continue
 
         changes = np.diff(is_active.astype(int))
         notes_on = np.where(changes == 1)[0]
-        notes_off = np.where(changes == -1)[1]
+        notes_off = np.where(changes == -1)[0] # np.where() with only a condition argument returns a tuple with 1 index
 
         if is_active[0]:
             notes_on = np.insert(notes_on, 0, 0)
@@ -78,18 +83,18 @@ def convert_midi(piano_roll, output_file, threshold = 0.5, base_midi_pitch = 12,
 
 
 def main(): 
+    wav_path = parse_args()
     #init model 
     model = init_model()
     model.eval()
     #load file 
-    spec_array = load_wav(parse_args())
+    spec_array = load_wav(wav_path)
     #transcribe
 
     with torch.no_grad():
         piano_roll = model(torch.tensor(spec_array).unsqueeze(0).unsqueeze(0).float())
 
     #convert to midi
-    wav_path = parse_args()
     base = os.path.splitext(os.path.basename(wav_path))[0]
     output_file = base + ".midi"
     convert_midi(piano_roll.squeeze(0), output_file=output_file)
