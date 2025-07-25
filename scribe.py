@@ -10,7 +10,7 @@ FREQ_BINS = 96
 SAMPLE_RATE = 44100
 HOP_LENGTH = 64
 
-USE_DEFAULT_INPUT_DIR = True  # we can set to false if we want user to enter full paths
+USE_DEFAULT_INPUT_DIR = False  # we can set to false if we want user to enter full paths
 DEFAULT_INPUT_DIR = '/home/clem3nti/projects/scribe/io/input'
 
 def parse_args():

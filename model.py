@@ -27,7 +27,7 @@ class AudioToMidi(nn.Module):
         #output layers 
         #in features in out_channels * freq_bins
         final_features = 128*input_freq_bins
-        self.lin = nn.Linear(in_features=final_features, out_features=96)
+        self.lin = nn.Linear(in_features=final_features, out_features=128) # only thing i changed was out_features, moved from 96 to 128
 
 
     def forward(self, x):
